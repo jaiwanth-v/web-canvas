@@ -1,0 +1,4 @@
+{
+  "watch": ["src/*", "public/*"],
+  "exec": "yarn run build"
+}

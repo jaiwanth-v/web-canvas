@@ -1,0 +1,18 @@
+{
+  "name": "Web Canvas",
+  "manifest_version": 2,
+  "version": "0.0.1",
+  "description": "Enables you to draw on web",
+  "content_scripts": [
+    {
+      "js": ["content.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "browser_action": {},
+  "permissions": ["contextMenus", "tabs"],
+  "web_accessible_resources": ["*.html"]
+}
