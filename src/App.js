@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import "./App.css";
 
 import { fabric } from "fabric";
@@ -12,9 +12,12 @@ import circle from "./Icons/circle.png";
 import selecthand from "./Icons/selecthand.png";
 import text from "./Icons/text.png";
 import "./EraserBrush";
-const initialState = {};
-let canvas;
 
+let canvas;
+let undo = [],
+  redo = [];
+let historyOperations = false;
+let previousBrushColor;
 function App() {
   const strokeColor = useRef(null);
   const setBrushColor = (color) => {
@@ -26,13 +29,35 @@ function App() {
   const setStrokeColor = (color) => {
     strokeColor.current = color;
   };
-  const onObjectModified = (e) => {};
-  const onUndo = () => {};
-  const onRedo = () => {};
+  const onObjectModified = (e) => {
+    if (historyOperations === true) return;
+    undo.push(e.target.canvas.toJSON());
+  };
+  const onUndo = () => {
+    if (!undo.length) return;
+    const prevState = undo.pop();
+    historyOperations = true;
+    canvas.clear().renderAll();
+    canvas.loadFromJSON(undo[undo.length - 1]);
+    canvas.renderAll();
+    redo.push(prevState);
+    historyOperations = false;
+  };
+
+  const onRedo = () => {
+    if (!redo.length) return;
+    historyOperations = true;
+    const prevState = redo.pop();
+    canvas.clear().renderAll();
+    canvas.loadFromJSON(prevState);
+    canvas.renderAll();
+    undo.push(prevState);
+    historyOperations = false;
+  };
 
   useEffect(() => {
     canvas = new fabric.Canvas("canvas");
-    canvas.loadFromJSON(initialState);
+    canvas.loadFromJSON({});
     canvas.isDrawingMode = true;
     canvas.freeDrawingBrush.color = "#5DADE2";
     canvas.setHeight(window.innerHeight - 100);
@@ -131,7 +156,8 @@ function App() {
                 alt="paintbrush-icon"
                 className="paintBrushIcon"
                 onClick={() => {
-                  setBrushColor("#5DADE2");
+                  canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+                  canvas.freeDrawingBrush.color = previousBrushColor;
                   canvas.isDrawingMode = true;
                 }}
               />
@@ -198,8 +224,7 @@ function App() {
                 className="eraserIcon"
                 onClick={(e) => {
                   canvas.freeDrawingBrush = new fabric.EraserBrush(canvas);
-                  setBrushColor("rgba(0,0,0,1)");
-                  canvas.freeDrawingBrush.width = 10;
+                  previousBrushColor = canvas.freeDrawingBrush.color;
                 }}
               />
             </div>
