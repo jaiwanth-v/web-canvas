@@ -1,38 +1,148 @@
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  transition: 0.2s ease-in all;
+  font-family: "Ubuntu", sans-serif;
+  font-weight: 400;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+}
+
 .App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  align-items: center;
 }
 
-.App-link {
-  color: #61dafb;
+.canvasField {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 1rem;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+canvas {
+  border: 1px solid #ff6a6ab9;
+  border-radius: 10px;
+  box-shadow: 0px 0px 12px 1px #ccc;
+}
+
+.toolSection {
+  display: flex;
+}
+
+.toolField {
+  width: 100%;
+  text-align: center;
+  display: flex;
+  justify-content: space-evenly;
+  justify-content: center;
+  align-items: center;
+  background: rgba(238, 238, 238, 0.5);
+  border-radius: 20px;
+  margin-top: 0.5rem;
+}
+
+.brushWidth {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.3rem;
+}
+
+.colorsets {
+  display: flex;
+  padding: 0.5rem 1rem;
+}
+
+.colorsets > div {
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background: transparent;
+  margin: 5px;
+  cursor: pointer;
+  position: relative;
+}
+
+.colorsets > div:hover {
+  transform: scale(1.2);
+}
+
+.icon {
+  box-shadow: 0px 0px 12px 1px #ccc;
+  border-radius: 10px;
+  margin-right: 10px;
+  cursor: pointer;
+  position: relative;
+}
+.icon:hover {
+  transform: scale(1.1);
+  box-shadow: -0.5px 1px 4px 3px rgb(0, 0, 0);
+}
+
+.eraser {
+  display: flex;
+  padding: 0.5rem 1rem;
+}
+
+.eraser .eraserTip {
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background: transparent;
+  margin: 2px;
+  cursor: pointer;
+}
+
+.deleteBtn {
+  width: 25px;
+  height: 25px;
+  margin: 5px 7px;
+}
+
+.shapesMenuField {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 1rem;
+}
+
+.circleShape,
+.triangleShape,
+.squareShape,
+.selecthandBtn,
+.paintBrushIcon,
+.eraserIcon,
+.textInputBtn,
+.downloadBtn {
+  width: 25px;
+  height: 25px;
+  margin: 5px 7px;
+}
+
+.save,
+.load,
+.clearSaved {
+  padding: 0.6rem 0.5rem;
+}
+
+@media (max-width: 630px) {
+  .toolField > div {
+    padding-top: 0.6rem;
   }
-  to {
-    transform: rotate(360deg);
+}
+
+@media (max-width: 768px) {
+  .toolField {
+    width: 100%;
+  }
+}
+
+@media (max-width: 1196px) {
+  .toolField {
+    flex-wrap: wrap;
   }
 }
