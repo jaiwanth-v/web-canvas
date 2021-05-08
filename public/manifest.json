@@ -14,5 +14,5 @@
   },
   "browser_action": {},
   "permissions": ["contextMenus", "tabs"],
-  "web_accessible_resources": ["*.html"]
+  "web_accessible_resources": ["*.html", "static/js/*.js", "static/css/*.css"]
 }

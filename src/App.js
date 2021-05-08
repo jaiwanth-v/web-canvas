@@ -1,32 +1,237 @@
 import React, { useEffect, useRef } from "react";
 import "./App.css";
-
 import { fabric } from "fabric";
-
-import paintbrush from "./Icons/paintbrush.png";
-import eraser from "./Icons/eraser.png";
-import dustbin from "./Icons/dustbin.png";
-import square from "./Icons/square.png";
-import triangle from "./Icons/triangle.png";
-import circle from "./Icons/circle.png";
-import selecthand from "./Icons/selecthand.png";
-import text from "./Icons/text.png";
 import "./EraserBrush";
-
-let canvas;
+import Draggable from "react-draggable";
+let canvas,
+  activeClass = null;
 let undo = [],
   redo = [];
 let historyOperations = false;
-let previousBrushColor;
+let previousBrushColor = "#5DADE2",
+  previousBrushSize = 10;
 function App() {
+  useEffect(() => {
+    function deleteKey(e) {
+      if (e.keyCode === 46) deleteObjects();
+    }
+    canvas = new fabric.Canvas("canvas");
+    canvas.loadFromJSON({});
+    canvas.isDrawingMode = true;
+    canvas.freeDrawingBrush.color = previousBrushColor;
+    canvas.setHeight(window.outerHeight);
+    canvas.setWidth(window.outerWidth);
+    canvas.freeDrawingBrush.width = 10;
+    changeCursor("pencil");
+    setActive("pencil");
+    canvas.on("object:added", onObjectModified);
+    canvas.on("object:modified", onObjectModified);
+    window.addEventListener("keydown", deleteKey);
+    return () => {
+      canvas.dispose();
+      window.removeEventListener("keydown", deleteKey);
+    };
+  }, []);
+  function changeCursor(cursor) {
+    document.getElementById("canvas").className = `cursor-${cursor}`;
+    document.querySelector(
+      "canvas.upper-canvas"
+    ).className = `upper-canvas cursor-${cursor}`;
+  }
+  function setActive(targetClass) {
+    if (activeClass) {
+      document
+        .getElementsByClassName(activeClass)[0]
+        .classList.toggle("active");
+    }
+    activeClass = targetClass;
+    document.getElementsByClassName(targetClass)[0].classList.add("active");
+  }
+  function drawLine() {
+    let line, isDown;
+    setActive("line");
+    changeCursor("draw");
+    canvas.isDrawingMode = false;
+    canvas.selection = false;
+    removeEvents();
+    canvas.on("mouse:down", function (o) {
+      isDown = true;
+      let pointer = canvas.getPointer(o.e);
+      let points = [pointer.x, pointer.y, pointer.x, pointer.y];
+      line = new fabric.Line(points, {
+        strokeWidth: 20,
+        fill: previousBrushColor,
+        stroke: previousBrushColor,
+        originX: "center",
+        originY: "center",
+      });
+      canvas.add(line);
+    });
+    canvas.on("mouse:move", function (o) {
+      if (!isDown) return;
+      let pointer = canvas.getPointer(o.e);
+      line.set({
+        x2: pointer.x,
+        y2: pointer.y,
+      });
+      canvas.renderAll();
+    });
+    canvas.on("mouse:up", function (o) {
+      if (isDown) {
+        isDown = false;
+        canvas.selection = true;
+        canvas.setActiveObject(line).renderAll();
+        removeEvents();
+        changeCursor("select");
+        setActive("select");
+      }
+    });
+  }
+
+  function drawCircle() {
+    setActive("circle");
+    changeCursor("draw");
+    canvas.isDrawingMode = false;
+    canvas.selection = false;
+    let ellipse, isDown, origX, origY;
+    removeEvents();
+    canvas.on("mouse:down", function (o) {
+      isDown = true;
+      let pointer = canvas.getPointer(o.e);
+      origX = pointer.x;
+      origY = pointer.y;
+      ellipse = new fabric.Ellipse({
+        left: origX,
+        top: origY,
+        originX: "left",
+        originY: "top",
+        rx: pointer.x - origX,
+        ry: pointer.y - origY,
+        angle: 0,
+        fill: "transparent",
+        stroke: previousBrushColor,
+        strokeWidth: previousBrushSize,
+        type: "ellipse",
+      });
+      canvas.add(ellipse);
+    });
+
+    canvas.on("mouse:move", function (o) {
+      if (!isDown) return;
+      let pointer = canvas.getPointer(o.e);
+      if (ellipse === null) {
+        return;
+      }
+      let rx = Math.abs(origX - pointer.x) / 2;
+      let ry = Math.abs(origY - pointer.y) / 2;
+      if (rx > ellipse.strokeWidth) rx -= ellipse.strokeWidth / 2;
+
+      if (ry > ellipse.strokeWidth) ry -= ellipse.strokeWidth / 2;
+
+      ellipse.set({ rx: rx, ry: ry });
+
+      if (origX > pointer.x) ellipse.set({ originX: "right" });
+      else ellipse.set({ originX: "left" });
+
+      if (origY > pointer.y) ellipse.set({ originY: "bottom" });
+      else ellipse.set({ originY: "top" });
+
+      canvas.renderAll();
+    });
+
+    canvas.on("mouse:up", function (o) {
+      if (isDown) {
+        isDown = false;
+        canvas.selection = true;
+        canvas.setActiveObject(ellipse).renderAll();
+        removeEvents();
+        changeCursor("select");
+        setActive("select");
+      }
+    });
+  }
+
+  function drawRectangle() {
+    changeCursor("draw");
+    setActive("rectangle");
+    canvas.isDrawingMode = false;
+    let rect, isDown, origX, origY;
+    canvas.selection = false;
+    removeEvents();
+    canvas.on("mouse:down", function (o) {
+      isDown = true;
+      let pointer = canvas.getPointer(o.e);
+      origX = pointer.x;
+      origY = pointer.y;
+      rect = new fabric.Rect({
+        left: origX,
+        top: origY,
+        originX: "left",
+        originY: "top",
+        width: pointer.x - origX,
+        height: pointer.y - origY,
+        angle: 0,
+        fill: "transparent",
+        stroke: previousBrushColor,
+        strokeWidth: previousBrushSize,
+        transparentCorners: false,
+      });
+      canvas.add(rect);
+    });
+
+    canvas.on("mouse:move", function (o) {
+      if (!isDown) return;
+      let pointer = canvas.getPointer(o.e);
+
+      if (origX > pointer.x) {
+        rect.set({
+          left: Math.abs(pointer.x),
+        });
+      }
+      if (origY > pointer.y) {
+        rect.set({
+          top: Math.abs(pointer.y),
+        });
+      }
+
+      rect.set({
+        width: Math.abs(origX - pointer.x),
+      });
+      rect.set({
+        height: Math.abs(origY - pointer.y),
+      });
+
+      canvas.renderAll();
+    });
+
+    canvas.on("mouse:up", function (o) {
+      if (isDown) {
+        canvas.selection = true;
+        isDown = false;
+        canvas.setActiveObject(rect).renderAll();
+        removeEvents();
+        changeCursor("select");
+        setActive("select");
+      }
+    });
+  }
+
+  function removeEvents() {
+    canvas.off("mouse:down");
+    canvas.off("mouse:up");
+    canvas.off("mouse:move");
+  }
   const strokeColor = useRef(null);
   const setBrushColor = (color) => {
+    previousBrushColor = color;
     canvas.freeDrawingBrush.color = color;
   };
   const setBrushSize = (size) => {
+    previousBrushSize = size;
     canvas.freeDrawingBrush.width = parseInt(size);
   };
   const setStrokeColor = (color) => {
+    previousBrushColor = color;
     strokeColor.current = color;
   };
   const onObjectModified = (e) => {
@@ -55,66 +260,9 @@ function App() {
     historyOperations = false;
   };
 
-  useEffect(() => {
-    canvas = new fabric.Canvas("canvas");
-    canvas.loadFromJSON({});
-    canvas.isDrawingMode = true;
-    canvas.freeDrawingBrush.color = "#5DADE2";
-    canvas.setHeight(window.innerHeight - 100);
-    canvas.setWidth(window.innerWidth - 50);
-    canvas.freeDrawingBrush.width = 5;
-    canvas.on("object:added", onObjectModified);
-    canvas.on("object:modified", onObjectModified);
-    return () => canvas.dispose();
-  }, []);
-
-  //function to change brush size
   const handleBrushSizeChange = (e) => {
+    e.preventDefault();
     setBrushSize(parseInt(e.target.value));
-  };
-
-  //function to generate different shapes
-  const generateShape = (e) => {
-    let elementClassName = e.target.classList;
-    canvas.isDrawingMode = false;
-    const strokeWidth = 2;
-
-    if (elementClassName === "squareShape") {
-      const rect = new fabric.Rect({
-        left: 100,
-        top: 100,
-        fill: "transparent",
-        width: 60,
-        height: 60,
-        angle: 90,
-        stroke: strokeColor.current,
-        strokeWidth,
-      });
-      canvas.add(rect);
-    } else if (elementClassName === "triangleShape") {
-      const rect = new fabric.Triangle({
-        left: 200,
-        top: 150,
-        fill: "transparent",
-        width: 60,
-        height: 60,
-        stroke: strokeColor.current,
-        strokeWidth,
-      });
-      canvas.add(rect);
-    } else if (elementClassName === "circleShape") {
-      const rect = new fabric.Circle({
-        left: 100,
-        top: 100,
-        radius: 50,
-        stroke: strokeColor.current,
-        strokeWidth,
-        fill: "transparent",
-      });
-      canvas.add(rect);
-    } else {
-      return;
-    }
   };
 
   const deleteObjects = () => {
@@ -131,12 +279,16 @@ function App() {
   };
 
   const addTextInput = () => {
+    setActive("select");
+    changeCursor("select");
     const textInput = new fabric.Textbox("Enter Text", {
-      left: 100,
-      top: 100,
+      left: window.innerWidth / 2,
+      top: window.innerHeight / 4,
       fontFamily: "ubuntu",
-      width: 30,
-      height: 40,
+      stroke: previousBrushColor,
+      fill: previousBrushColor,
+      width: 60,
+      height: 60,
     });
     canvas.add(textInput);
     canvas.isDrawingMode = false;
@@ -145,163 +297,114 @@ function App() {
   const clearSaved = () => {
     canvas.clear();
   };
+
+  const noPointer = () => {
+    setActive("mouse");
+    changeCursor("mouse");
+  };
+
+  const colors = [
+    "#5DADE2",
+    "#E74C3C",
+    "#F1C40F",
+    "#239B56",
+    "#17202A",
+    "#6200EE",
+    "#03dac5",
+    "grey",
+  ];
+
   return (
     <div className="App">
-      <div className="toolSection">
-        <div className="toolField">
-          <div className="brushWidth">
-            <div className="icon">
-              <img
-                src={paintbrush}
-                alt="paintbrush-icon"
-                className="paintBrushIcon"
-                onClick={() => {
-                  canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-                  canvas.freeDrawingBrush.color = previousBrushColor;
-                  canvas.isDrawingMode = true;
-                }}
-              />
-            </div>
-            <input
-              type="range"
-              min="1"
-              max="50"
-              defaultValue="10"
-              step="5"
-              className="slider"
-              onChange={handleBrushSizeChange}
-            ></input>
-          </div>
+      <Draggable>
+        <div className="toolSection">
+          <div className="toolField">
+            <i
+              className="fas fa-pencil-alt fa-2x pencil"
+              onClick={() => {
+                canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+                canvas.freeDrawingBrush.color = previousBrushColor;
+                canvas.freeDrawingBrush.width = previousBrushSize;
+                canvas.isDrawingMode = true;
+                changeCursor("pencil");
+                setActive("pencil");
+              }}
+            ></i>
 
+            <i
+              alt="eraser-icon"
+              className="fas fa-eraser fa-2x eraser"
+              onClick={(e) => {
+                canvas.freeDrawingBrush = new fabric.EraserBrush(canvas);
+                canvas.freeDrawingBrush.width = 2 * previousBrushSize;
+                changeCursor("eraser");
+                setActive("eraser");
+              }}
+            />
+            <i
+              alt="delete-icon"
+              onClick={deleteObjects}
+              className="fas fa-trash fa-2x"
+            />
+            <i alt="undo" className="fas fa-undo fa-2x" onClick={onUndo} />
+            <i alt="redo" className="fas fa-redo fa-2x" onClick={onRedo} />
+            <i
+              className="fas fa-object-ungroup fa-2x select"
+              onClick={() => {
+                canvas.isDrawingMode = false;
+                changeCursor("select");
+                setActive("select");
+              }}
+            />
+
+            <i
+              alt="textInput-icon"
+              className="fas fa-font fa-2x"
+              onClick={addTextInput}
+            />
+            <i className="fas fa-broom  fa-2x" onClick={clearSaved} />
+            <i
+              className="fas fa-mouse-pointer fa-2x mouse"
+              onClick={noPointer}
+            />
+            <i
+              alt="square"
+              className="far fa-square fa-2x rectangle"
+              onClick={drawRectangle}
+            />
+            <i
+              alt="circle"
+              className="far fa-circle fa-2x circle"
+              onClick={drawCircle}
+            />
+            <i
+              alt="line"
+              className="fas fa-slash fa-2x line"
+              onClick={drawLine}
+            />
+          </div>
           <div className="colorsets">
-            <div
-              className="blue"
-              style={{ background: "#5DADE2" }}
-              onClick={() => {
-                setBrushColor("#5DADE2");
-                setStrokeColor("#5DADE2");
-              }}
-            ></div>
-            <div
-              className="red "
-              style={{ background: "#E74C3C" }}
-              onClick={() => {
-                setBrushColor("#E74C3C");
-                setStrokeColor("#E74C3C");
-              }}
-            ></div>
-            <div
-              className="yellow "
-              style={{ background: "#F1C40F" }}
-              onClick={() => {
-                setBrushColor("#F1C40F");
-                setStrokeColor("#F1C40F");
-              }}
-            ></div>
-            <div
-              className="green "
-              style={{ background: "#239B56" }}
-              onClick={() => {
-                setBrushColor("#239B56");
-                setStrokeColor("#239B56");
-              }}
-            ></div>
-            <div
-              className="black "
-              style={{ background: "#17202A" }}
-              onClick={() => {
-                setBrushColor("#17202A");
-                setStrokeColor("#239B56");
-              }}
-            ></div>
-          </div>
-
-          <div className="eraser">
-            <div className="icon eraserDesc">
-              <img
-                src={eraser}
-                alt="eraser-icon"
-                className="eraserIcon"
-                onClick={(e) => {
-                  canvas.freeDrawingBrush = new fabric.EraserBrush(canvas);
-                  previousBrushColor = canvas.freeDrawingBrush.color;
+            {colors.map((color) => (
+              <div
+                style={{ background: color }}
+                onClick={() => {
+                  setBrushColor(color);
+                  setStrokeColor(color);
                 }}
-              />
-            </div>
-            <input
-              type="range"
-              min="1"
-              max="100"
-              step="10"
-              defaultValue="10"
-              className="slider"
-              onChange={(e) => setBrushSize(e.target.value)}
-            ></input>
+              ></div>
+            ))}
           </div>
-
-          <div className="deleteField">
-            <div className="icon" onClick={deleteObjects}>
-              <img src={dustbin} alt="delete-icon" className="deleteBtn" />
-            </div>
-          </div>
-          <button onClick={onUndo}>Undo</button>
-          <button onClick={onRedo}>Redo</button>
-          <div className="selectionHand">
-            <div
-              className="icon"
-              onClick={() => (canvas.isDrawingMode = false)}
-            >
-              <img
-                src={selecthand}
-                alt="select-icon"
-                className="selecthandBtn"
-              />
-            </div>
-          </div>
-
-          <div className="textInput">
-            <div className="icon">
-              <img
-                src={text}
-                alt="textInput-icon"
-                className="textInputBtn"
-                onClick={addTextInput}
-              />
-            </div>
-          </div>
-          <div className="clearSaved icon" onClick={clearSaved}>
-            Clear Saved
-          </div>
-
-          <div className="shapesMenuField">
-            <div className="icon square">
-              <img
-                src={square}
-                alt="square-icon"
-                className="squareShape"
-                onClick={(e) => generateShape(e)}
-              />
-            </div>
-            <div className="icon">
-              <img
-                src={triangle}
-                alt="triangle-icon"
-                className="triangleShape"
-                onClick={(e) => generateShape(e)}
-              />
-            </div>
-            <div className="icon">
-              <img
-                src={circle}
-                alt="circle-icon"
-                className="circleShape"
-                onClick={(e) => generateShape(e)}
-              />
-            </div>
-          </div>
+          <input
+            type="range"
+            min="1"
+            max="50"
+            defaultValue="10"
+            step="5"
+            className="slider"
+            onChange={handleBrushSizeChange}
+          ></input>
         </div>
-      </div>
-
+      </Draggable>
       <div className="canvasField">
         <canvas id="canvas" />
       </div>
