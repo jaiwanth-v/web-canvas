@@ -10,7 +10,7 @@ let undo = [],
   redo = [];
 let historyOperations = false;
 let previousBrushColor = "#5DADE2",
-  previousBrushSize = 10,
+  previousBrushSize = 7,
   noPointer = false;
 function App() {
   useEffect(() => {
@@ -37,7 +37,7 @@ function App() {
     canvas.freeDrawingBrush.color = previousBrushColor;
     canvas.setHeight(window.outerHeight);
     canvas.setWidth(window.outerWidth);
-    canvas.freeDrawingBrush.width = 10;
+    canvas.freeDrawingBrush.width = previousBrushSize;
     changeCursor("pencil");
     setActive("pencil");
     canvas.on("object:added", onObjectModified);
@@ -88,6 +88,7 @@ function App() {
         strokeWidth: previousBrushSize,
         fill: previousBrushColor,
         stroke: previousBrushColor,
+        strokeLineCap: "round",
         originX: "center",
         originY: "center",
       });
@@ -353,6 +354,7 @@ function App() {
               title="Pencil"
               onClick={() => {
                 canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+                // canvas.freeDrawingBrush.decimate = 0;
                 canvas.freeDrawingBrush.color = previousBrushColor;
                 canvas.freeDrawingBrush.width = previousBrushSize;
                 canvas.isDrawingMode = true;
@@ -431,10 +433,11 @@ function App() {
             ))}
           </div>
           <input
+            title="Brush Size"
             type="range"
             min="1"
             max="50"
-            defaultValue="10"
+            defaultValue={previousBrushSize.toString()}
             step="5"
             className="slider"
             onChange={handleBrushSizeChange}

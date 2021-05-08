@@ -5,14 +5,22 @@ chrome.runtime.onMessage.addListener((request) => {
   if (request.type === "toggleExtension") {
     let overlay = document.getElementById("canvas-overlay");
     if (overlay) {
+      chrome.runtime.sendMessage({
+        message:
+          overlay.style.display === "none" ? "enableIcon" : "disableIcon",
+      });
       overlay.style.display =
         overlay.style.display === "none" ? "block" : "none";
       return;
     }
+    chrome.runtime.sendMessage({
+      message: "enableIcon",
+    });
+
     overlay = document.createElement("div");
     overlay.setAttribute(
       "style",
-      "height:0;width:0;position:fixed;top:0;left:0;z-index:121332323;background:transparent;color-scheme:light !important"
+      "height:0;width:0;position:fixed;top:0;left:0;z-index:2147483647;background:transparent;color-scheme:light !important"
     );
     overlay.setAttribute("id", "canvas-overlay");
     overlay.innerHTML = `<iframe id="canvas-iframe"/>`;

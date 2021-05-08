@@ -14,5 +14,11 @@
   },
   "browser_action": {},
   "permissions": ["contextMenus", "tabs"],
-  "web_accessible_resources": ["*.html", "static/js/*.js", "static/css/*.css"]
+  "web_accessible_resources": ["*.html"],
+  "icons": {
+    "16": "pencil16.png",
+    "32": "pencil32.png",
+    "64": "pencil64.png",
+    "128": "pencil128.png"
+  }
 }
