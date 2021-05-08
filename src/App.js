@@ -40,6 +40,7 @@ function App() {
     canvas.freeDrawingBrush.width = previousBrushSize;
     changeCursor("pencil");
     setActive("pencil");
+    setBrushColor(previousBrushColor);
     canvas.on("object:added", onObjectModified);
     canvas.on("object:modified", onObjectModified);
     window.addEventListener("keydown", deleteKey);
@@ -243,6 +244,97 @@ function App() {
     });
   }
 
+  let calcArrowAngle = function (x1, y1, x2, y2) {
+    let angle = 0,
+      x,
+      y;
+    x = x2 - x1;
+    y = y2 - y1;
+    if (x === 0) angle = y === 0 ? 0 : y > 0 ? Math.PI / 2 : (Math.PI * 3) / 2;
+    else if (y === 0) angle = x > 0 ? 0 : Math.PI;
+    else
+      angle =
+        x < 0
+          ? Math.atan(y / x) + Math.PI
+          : y < 0
+          ? Math.atan(y / x) + 2 * Math.PI
+          : Math.atan(y / x);
+
+    return (angle * 180) / Math.PI + 90;
+  };
+
+  function drawArrow() {
+    let isDown, line, triangle, deltaX, deltaY;
+    changeCursor("draw");
+    setActive("arrow");
+    canvas.isDrawingMode = false;
+    canvas.selection = false;
+    removeEvents();
+    canvas.on("mouse:down", function (o) {
+      isDown = true;
+      let pointer = canvas.getPointer(o.e);
+      let points = [pointer.x, pointer.y, pointer.x, pointer.y];
+      line = new fabric.Line(points, {
+        strokeWidth: previousBrushSize,
+        fill: previousBrushColor,
+        stroke: previousBrushColor,
+        originX: "center",
+        originY: "center",
+        type: "arrow",
+      });
+      let centerX = (line.x1 + line.x2) / 2;
+      let centerY = (line.y1 + line.y2) / 2;
+      deltaX = line.left - centerX;
+      deltaY = line.top - centerY;
+
+      triangle = new fabric.Triangle({
+        left: line.get("x1") + deltaX,
+        top: line.get("y1") + deltaY,
+        originX: "center",
+        originY: "center",
+        selectable: false,
+        pointType: "arrow_start",
+        angle: -45,
+        width: previousBrushSize * 4,
+        height: previousBrushSize * 4,
+        fill: previousBrushColor,
+        id: "arrow_triangle",
+      });
+      canvas.add(line, triangle);
+    });
+
+    canvas.on("mouse:move", function (o) {
+      if (!isDown) return;
+      let pointer = canvas.getPointer(o.e);
+
+      line.set({
+        x2: pointer.x,
+        y2: pointer.y,
+      });
+      triangle.set({
+        left: pointer.x + deltaX,
+        top: pointer.y + deltaY,
+        angle: calcArrowAngle(line.x1, line.y1, line.x2, line.y2),
+      });
+
+      canvas.renderAll();
+    });
+
+    canvas.on("mouse:up", function (o) {
+      if (isDown) {
+        canvas.selection = true;
+        isDown = false;
+        let group = new window.fabric.Group([line, triangle]);
+        canvas.remove(line, triangle);
+        canvas.add(group);
+        canvas.setActiveObject(group).renderAll();
+        removeEvents();
+        changeCursor("select");
+        setActive("select");
+      }
+    });
+  }
+
   function removeEvents() {
     canvas.off("mouse:down");
     canvas.off("mouse:up");
@@ -250,6 +342,11 @@ function App() {
   }
   const strokeColor = useRef(null);
   const setBrushColor = (color) => {
+    document.getElementById(previousBrushColor).style.boxShadow =
+      previousBrushColor + " 0px 0px 0px 15px inset";
+    document.getElementById(
+      color
+    ).style.boxShadow = `${color} 0px 0px 0px 3px inset, ${color} 0px 0px 4px`;
     previousBrushColor = color;
     canvas.freeDrawingBrush.color = color;
   };
@@ -339,14 +436,16 @@ function App() {
     "#17202A",
     "#6200EE",
     "#03dac5",
-    "grey",
+    "#9e9e9e",
     "#e91e63",
     "#3f51b5",
+    "#9c27b0",
+    "#795548",
   ];
 
   return (
     <div className="App">
-      <Draggable>
+      <Draggable cancel=".slider, .fa-2x, .colorsets>div">
         <div className="toolSection" id="toolSection">
           <div className="toolField">
             <i
@@ -354,7 +453,6 @@ function App() {
               title="Pencil"
               onClick={() => {
                 canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-                // canvas.freeDrawingBrush.decimate = 0;
                 canvas.freeDrawingBrush.color = previousBrushColor;
                 canvas.freeDrawingBrush.width = previousBrushSize;
                 canvas.isDrawingMode = true;
@@ -369,6 +467,7 @@ function App() {
               onClick={(e) => {
                 canvas.freeDrawingBrush = new fabric.EraserBrush(canvas);
                 canvas.freeDrawingBrush.width = 2 * previousBrushSize;
+                canvas.isDrawingMode = true;
                 changeCursor("eraser");
                 setActive("eraser");
               }}
@@ -389,6 +488,11 @@ function App() {
               title="Circle"
               className="far fa-circle fa-2x circle"
               onClick={drawCircle}
+            />
+            <i
+              title="Arrow"
+              className="fas fa-long-arrow-alt-right fa-2x arrow"
+              onClick={drawArrow}
             />
             <i
               title="Line"
@@ -424,7 +528,11 @@ function App() {
             {colors.map((color, key) => (
               <div
                 key={key}
-                style={{ background: color }}
+                id={color}
+                style={{
+                  background: "transparent",
+                  boxShadow: `${color} 0px 0px 0px 15px inset`,
+                }}
                 onClick={() => {
                   setBrushColor(color);
                   setStrokeColor(color);
@@ -436,9 +544,9 @@ function App() {
             title="Brush Size"
             type="range"
             min="1"
-            max="50"
+            max="51"
             defaultValue={previousBrushSize.toString()}
-            step="5"
+            step="2"
             className="slider"
             onChange={handleBrushSizeChange}
           ></input>

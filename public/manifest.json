@@ -13,7 +13,7 @@
     "scripts": ["background.js"]
   },
   "browser_action": {},
-  "permissions": ["tabs"],
+  "permissions": ["activeTab"],
   "web_accessible_resources": ["*.html"],
   "icons": {
     "16": "pencil16.png",

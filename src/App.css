@@ -36,7 +36,7 @@ canvas {
   display: flex;
   background: whitesmoke;
   position: absolute;
-  z-index: 121332323;
+  z-index: 2147483647 !important;
   top: 12%;
   left: 5%;
   cursor: move;
@@ -44,8 +44,9 @@ canvas {
 }
 .toolSection input[type="range"] {
   position: absolute;
-  top: 419px;
-  left: 9px;
+  top: 486px;
+  left: 15px;
+  width: 114px;
   transform: rotate(90deg);
 }
 
@@ -69,10 +70,14 @@ canvas {
   font-size: 20px !important;
 }
 
+.toolField i.fa-2x.arrow {
+  font-size: 23px !important;
+}
+
 i.exit {
   position: absolute;
-  top: 325px;
-  left: 64px;
+  top: 402px;
+  left: 65px;
   font-size: 23px !important;
   cursor: pointer;
 }
@@ -124,9 +129,9 @@ i.exit {
 }
 
 .colorsets > div {
-  width: 20px;
-  height: 20px;
-  border-radius: 10px;
+  width: 21.5px;
+  height: 21.5px;
+  border-radius: 50%;
   background: transparent;
   margin: 5px;
   cursor: pointer;
@@ -134,8 +139,11 @@ i.exit {
 }
 
 .colorsets > div:hover {
-  transform: scale(1.2);
-  transition: transform 0.1s ease;
+  transform: scale(1.2) !important;
+  transition: transform 0.15s ease;
+}
+.colorsets > div {
+  transition: box-shadow 100ms ease 0s;
 }
 
 .icon {
