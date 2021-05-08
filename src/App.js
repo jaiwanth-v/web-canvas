@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import React, { useEffect, useRef } from "react";
 import "./App.css";
 import { fabric } from "fabric";
@@ -9,12 +10,27 @@ let undo = [],
   redo = [];
 let historyOperations = false;
 let previousBrushColor = "#5DADE2",
-  previousBrushSize = 10;
+  previousBrushSize = 10,
+  noPointer = false;
 function App() {
   useEffect(() => {
     function deleteKey(e) {
       if (e.keyCode === 46) deleteObjects();
     }
+    document.addEventListener("mousemove", (e) => {
+      if (noPointer) {
+        const toolSection = document.getElementById("toolSection");
+        const isOutside = !toolSection.matches(":hover");
+        if (isOutside) {
+          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            chrome.tabs.sendMessage(tabs[0].id, {
+              type: "disable-pointer-events",
+              data: toolSection.getBoundingClientRect(),
+            });
+          });
+        }
+      }
+    });
     canvas = new fabric.Canvas("canvas");
     canvas.loadFromJSON({});
     canvas.isDrawingMode = true;
@@ -32,17 +48,27 @@ function App() {
       window.removeEventListener("keydown", deleteKey);
     };
   }, []);
+
   function changeCursor(cursor) {
     document.getElementById("canvas").className = `cursor-${cursor}`;
     document.querySelector(
       "canvas.upper-canvas"
     ).className = `upper-canvas cursor-${cursor}`;
   }
+
   function setActive(targetClass) {
     if (activeClass) {
       document
         .getElementsByClassName(activeClass)[0]
         .classList.toggle("active");
+    }
+    if (targetClass !== "mouse" && noPointer) {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          type: "enable-pointer-events",
+        });
+      });
+      noPointer = false;
     }
     activeClass = targetClass;
     document.getElementsByClassName(targetClass)[0].classList.add("active");
@@ -59,7 +85,7 @@ function App() {
       let pointer = canvas.getPointer(o.e);
       let points = [pointer.x, pointer.y, pointer.x, pointer.y];
       line = new fabric.Line(points, {
-        strokeWidth: 20,
+        strokeWidth: previousBrushSize,
         fill: previousBrushColor,
         stroke: previousBrushColor,
         originX: "center",
@@ -298,29 +324,33 @@ function App() {
     canvas.clear();
   };
 
-  const noPointer = () => {
+  const changePointer = () => {
     setActive("mouse");
     changeCursor("mouse");
+    noPointer = true;
   };
 
   const colors = [
     "#5DADE2",
-    "#E74C3C",
+    "#f44336",
     "#F1C40F",
     "#239B56",
     "#17202A",
     "#6200EE",
     "#03dac5",
     "grey",
+    "#e91e63",
+    "#3f51b5",
   ];
 
   return (
     <div className="App">
       <Draggable>
-        <div className="toolSection">
+        <div className="toolSection" id="toolSection">
           <div className="toolField">
             <i
               className="fas fa-pencil-alt fa-2x pencil"
+              title="Pencil"
               onClick={() => {
                 canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
                 canvas.freeDrawingBrush.color = previousBrushColor;
@@ -332,7 +362,7 @@ function App() {
             ></i>
 
             <i
-              alt="eraser-icon"
+              title="Eraser"
               className="fas fa-eraser fa-2x eraser"
               onClick={(e) => {
                 canvas.freeDrawingBrush = new fabric.EraserBrush(canvas);
@@ -342,13 +372,29 @@ function App() {
               }}
             />
             <i
-              alt="delete-icon"
-              onClick={deleteObjects}
-              className="fas fa-trash fa-2x"
+              title="Add Text"
+              className="fas fa-font fa-2x"
+              onClick={addTextInput}
             />
-            <i alt="undo" className="fas fa-undo fa-2x" onClick={onUndo} />
-            <i alt="redo" className="fas fa-redo fa-2x" onClick={onRedo} />
+            <i title="Undo" className="fas fa-undo fa-2x" onClick={onUndo} />
+            <i title="Redo" className="fas fa-redo fa-2x" onClick={onRedo} />
             <i
+              title="Rectangle"
+              className="far fa-square fa-2x rectangle"
+              onClick={drawRectangle}
+            />
+            <i
+              title="Circle"
+              className="far fa-circle fa-2x circle"
+              onClick={drawCircle}
+            />
+            <i
+              title="Line"
+              className="fas fa-slash fa-2x line"
+              onClick={drawLine}
+            />
+            <i
+              title="Select Items"
               className="fas fa-object-ungroup fa-2x select"
               onClick={() => {
                 canvas.isDrawingMode = false;
@@ -356,36 +402,26 @@ function App() {
                 setActive("select");
               }}
             />
-
             <i
-              alt="textInput-icon"
-              className="fas fa-font fa-2x"
-              onClick={addTextInput}
-            />
-            <i className="fas fa-broom  fa-2x" onClick={clearSaved} />
-            <i
+              title="Interact with webpage"
               className="fas fa-mouse-pointer fa-2x mouse"
-              onClick={noPointer}
+              onClick={changePointer}
             />
             <i
-              alt="square"
-              className="far fa-square fa-2x rectangle"
-              onClick={drawRectangle}
+              title="Delete Selected Objects"
+              onClick={deleteObjects}
+              className="fas fa-trash fa-2x"
             />
             <i
-              alt="circle"
-              className="far fa-circle fa-2x circle"
-              onClick={drawCircle}
-            />
-            <i
-              alt="line"
-              className="fas fa-slash fa-2x line"
-              onClick={drawLine}
+              title="Clear Canvas"
+              className="fas fa-broom  fa-2x"
+              onClick={clearSaved}
             />
           </div>
           <div className="colorsets">
-            {colors.map((color) => (
+            {colors.map((color, key) => (
               <div
+                key={key}
                 style={{ background: color }}
                 onClick={() => {
                   setBrushColor(color);
@@ -403,6 +439,20 @@ function App() {
             className="slider"
             onChange={handleBrushSizeChange}
           ></input>
+          <i
+            title="Exit Canvas"
+            onClick={() =>
+              chrome.tabs.query(
+                { active: true, currentWindow: true },
+                (tabs) => {
+                  chrome.tabs.sendMessage(tabs[0].id, {
+                    type: "toggleExtension",
+                  });
+                }
+              )
+            }
+            className="fas fa-sign-out-alt fa-2x exit"
+          />
         </div>
       </Draggable>
       <div className="canvasField">

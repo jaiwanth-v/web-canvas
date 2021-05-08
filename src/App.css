@@ -5,6 +5,7 @@
   box-sizing: border-box;
   font-family: "Ubuntu", sans-serif;
   font-weight: 400;
+  overflow: hidden;
 }
 
 body {
@@ -36,34 +37,44 @@ canvas {
   background: whitesmoke;
   position: absolute;
   z-index: 121332323;
+  top: 12%;
+  left: 0%;
   cursor: move;
   border-radius: 17px;
 }
 .toolSection input[type="range"] {
   position: absolute;
-  top: 69%;
-  left: 15%;
+  top: 419px;
+  left: 9px;
   transform: rotate(90deg);
 }
 
-.toolSection i {
+.toolField i {
   cursor: pointer !important;
   padding: 10px 5px 5px 5px !important;
   width: 42px !important;
   height: 40px !important;
   border-radius: 10px !important;
-  margin: 2px 0 0 9px !important;
+  margin: 2px 0 0 0 !important;
 }
-.toolSection i:hover {
+.toolField i:hover {
   background-color: lightgrey;
 }
 
-.toolSection i.active {
+.toolField i.active {
   background: lightgrey !important;
 }
 
-.toolSection i.fa-2x {
+.toolField i.fa-2x {
   font-size: 20px !important;
+}
+
+i.exit {
+  position: absolute;
+  top: 325px;
+  left: 64px;
+  font-size: 23px !important;
+  cursor: pointer;
 }
 
 .toolField {
@@ -109,7 +120,7 @@ canvas {
 .colorsets {
   display: flex;
   flex-direction: column;
-  padding: 12px 1rem;
+  padding: 15px 20px 0 3px;
 }
 
 .colorsets > div {
@@ -124,6 +135,7 @@ canvas {
 
 .colorsets > div:hover {
   transform: scale(1.2);
+  transition: transform 0.1s ease;
 }
 
 .icon {
@@ -136,28 +148,4 @@ canvas {
 .icon:hover {
   transform: scale(1.1);
   box-shadow: -0.5px 1px 4px 3px rgb(0, 0, 0);
-}
-
-.shapesMenuField {
-  display: flex;
-  justify-content: space-between;
-  margin: 0 1rem;
-}
-
-@media (max-width: 630px) {
-  .toolField > div {
-    padding-top: 0.6rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .toolField {
-    width: 100%;
-  }
-}
-
-@media (max-width: 1196px) {
-  .toolField {
-    flex-wrap: wrap;
-  }
 }
