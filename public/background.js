@@ -6,11 +6,13 @@ chrome.browserAction.onClicked.addListener(() => {
 });
 
 chrome.runtime.onMessage.addListener((request) => {
-  chrome.browserAction.setIcon({
-    path:
-      request.message === "enableIcon"
-        ? "pencil-active128.png"
-        : "pencil128.png",
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.browserAction.setIcon({
+      tabId: tabs[0].id,
+      path:
+        request.message === "enableIcon"
+          ? "pencil-active128.png"
+          : "pencil128.png",
+    });
   });
-  console.log(request);
 });
