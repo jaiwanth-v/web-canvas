@@ -3,11 +3,14 @@ import React, { useEffect, useRef } from "react";
 import "./App.css";
 import { fabric } from "fabric";
 import "./EraserBrush";
-import Draggable from "react-draggable";
+import { Rnd } from "react-rnd";
 let canvas,
   activeClass = null;
 let undo = [],
   redo = [];
+let zoom = 1,
+  width = 96.5,
+  height = 595;
 let historyOperations = false;
 let previousBrushColor = "#5DADE2",
   previousBrushSize = 7,
@@ -202,6 +205,7 @@ function App() {
         fill: "transparent",
         stroke: previousBrushColor,
         strokeWidth: previousBrushSize,
+        strokeLineCap: "round",
         transparentCorners: false,
       });
       canvas.add(rect);
@@ -281,6 +285,7 @@ function App() {
         originX: "center",
         originY: "center",
         type: "arrow",
+        strokeLineCap: "round",
       });
       let centerX = (line.x1 + line.x2) / 2;
       let centerY = (line.y1 + line.y2) / 2;
@@ -298,7 +303,6 @@ function App() {
         width: previousBrushSize * 4,
         height: previousBrushSize * 4,
         fill: previousBrushColor,
-        id: "arrow_triangle",
       });
       canvas.add(line, triangle);
     });
@@ -445,8 +449,23 @@ function App() {
 
   return (
     <div className="App">
-      <Draggable cancel=".slider, .fa-2x, .colorsets>div">
-        <div className="toolSection" id="toolSection">
+      <Rnd
+        default={{
+          x: 20,
+          y: 45,
+          width,
+          height,
+        }}
+        enableResizing={false}
+        id="draggable-div"
+        cancel=".slider, .fa-2x, .colorsets>div"
+        style={{ zIndex: 2147483647 }}
+      >
+        <div
+          className="toolSection"
+          style={{ top: "0px", left: "0px" }}
+          id="toolSection"
+        >
           <div className="toolField">
             <i
               className="fas fa-pencil-alt fa-2x pencil"
@@ -564,8 +583,50 @@ function App() {
             }
             className="fas fa-sign-out-alt fa-2x exit"
           />
+          <div className="zoom-buttons">
+            <i
+              title="Increase Dialog Size"
+              onClick={() => {
+                if(zoom > 2) return;
+                zoom += 0.1;
+                const styles = document.getElementById("toolSection").style;
+                styles.transform = `scale(${zoom})`;
+                let top = Number(styles.top.split("px")[0]);
+                let left = Number(styles.left.split("px")[0]);
+                styles.top = `${top + (height * 0.1) / 2}px`;
+                styles.left = `${left + (width * 0.1) / 2}px`;
+                document.getElementById("draggable-div").style.width = `${
+                  width * zoom
+                }px`;
+                document.getElementById("draggable-div").style.height = `${
+                  height * zoom
+                }px`;
+              }}
+              className="fas fa-search-plus fa-2x"
+            />
+            <i
+              title="Decrease Dialog Size"
+              className="fas fa-search-minus fa-2x"
+              onClick={() => {
+                if(zoom < 0.4) return;
+                zoom -= 0.1;
+                const styles = document.getElementById("toolSection").style;
+                styles.transform = `scale(${zoom})`;
+                let top = Number(styles.top.split("px")[0]);
+                let left = Number(styles.left.split("px")[0]);
+                styles.top = `${top - (height * 0.1) / 2}px`;
+                styles.left = `${left - (width * 0.1) / 2}px`;
+                document.getElementById("draggable-div").style.width = `${
+                  width * zoom
+                }px`;
+                document.getElementById("draggable-div").style.height = `${
+                  height * zoom
+                }px`;
+              }}
+            />
+          </div>
         </div>
-      </Draggable>
+      </Rnd>
       <div className="canvasField">
         <canvas id="canvas" />
       </div>

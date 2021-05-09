@@ -36,11 +36,13 @@ canvas {
   display: flex;
   background: whitesmoke;
   position: absolute;
+  top: 0px;
+  left: 0px;
   z-index: 2147483647 !important;
-  top: 12%;
-  left: 5%;
   cursor: move;
+  padding-bottom: 29px;
   border-radius: 17px;
+  transition: transform 0.25s ease;
 }
 .toolSection input[type="range"] {
   position: absolute;
@@ -49,7 +51,13 @@ canvas {
   width: 114px;
   transform: rotate(90deg);
 }
-
+.zoom-buttons {
+  position: absolute;
+  bottom: 12px;
+  display: flex;
+  justify-content: space-around;
+  width: 96.5px;
+}
 .toolField i {
   cursor: pointer !important;
   padding: 10px 5px 5px 5px !important;
@@ -68,6 +76,10 @@ canvas {
 
 .toolField i.fa-2x {
   font-size: 20px !important;
+}
+.zoom-buttons i.fa-2x {
+  cursor: pointer !important;
+  font-size: 18px !important;
 }
 
 .toolField i.fa-2x.arrow {
