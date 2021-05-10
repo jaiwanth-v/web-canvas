@@ -28,10 +28,6 @@ body {
   justify-content: space-around;
 }
 
-canvas {
-  border-radius: 10px;
-}
-
 .toolSection {
   display: flex;
   background: whitesmoke;
@@ -70,6 +66,15 @@ canvas {
   background-color: lightgrey;
 }
 
+#lock-symbol {
+  position: absolute;
+  font-size: 19px;
+  line-height: 20px;
+  cursor: pointer;
+  left: 65px;
+  top: 369px;
+}
+
 .toolField i.active {
   background: lightgrey !important;
 }
@@ -79,6 +84,7 @@ canvas {
 }
 .zoom-buttons i.fa-2x {
   cursor: pointer !important;
+  line-height: 20px !important;
   font-size: 18px !important;
 }
 
@@ -88,9 +94,9 @@ canvas {
 
 i.exit {
   position: absolute;
-  top: 402px;
+  top: 402.5px;
   left: 65px;
-  font-size: 23px !important;
+  font-size: 22px !important;
   cursor: pointer;
 }
 
@@ -137,7 +143,7 @@ i.exit {
 .colorsets {
   display: flex;
   flex-direction: column;
-  padding: 15px 20px 0 3px;
+  padding: 14px 20px 0 3px;
 }
 
 .colorsets > div {

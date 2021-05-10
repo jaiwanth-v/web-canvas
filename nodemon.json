@@ -1,4 +1,4 @@
 {
   "watch": ["src/*", "public/*"],
-  "exec": "yarn run build"
+  "exec": "yarn run build && zip -r -q build build/"
 }

@@ -6,7 +6,8 @@ import "./EraserBrush";
 import { Rnd } from "react-rnd";
 let canvas,
   activeClass = null,
-  clipboard;
+  clipboard,
+  lock = false;
 let undo = [],
   redo = [];
 let zoom = 1,
@@ -47,6 +48,14 @@ function App() {
         canvas.requestRenderAll();
       });
     }
+    function selectAll() {
+      canvas.discardActiveObject();
+      let sel = new fabric.ActiveSelection(canvas.getObjects(), {
+        canvas: canvas,
+      });
+      canvas.setActiveObject(sel);
+      canvas.requestRenderAll();
+    }
     function onMouseMove() {
       if (noPointer) {
         const toolSection = document.getElementById("toolSection");
@@ -78,6 +87,10 @@ function App() {
         copy();
         deleteObjects();
       }
+      if ((e.ctrlKey || e.metaKey) && e.keyCode === 65) selectAll();
+      if (e.keyCode === 27) canvas.discardActiveObject().requestRenderAll();
+      if ((e.ctrlKey || e.metaKey) && e.keyCode === 90) onUndo();
+      if ((e.ctrlKey || e.metaKey) && e.keyCode === 89) onRedo();
       if ((e.ctrlKey || e.metaKey) && e.keyCode === 86) paste();
     }
     document.addEventListener("mousemove", onMouseMove);
@@ -164,6 +177,7 @@ function App() {
         removeEvents();
         changeCursor("select");
         setActive("select");
+        if (lock) drawLine();
       }
     });
   }
@@ -228,6 +242,7 @@ function App() {
         removeEvents();
         changeCursor("select");
         setActive("select");
+        if (lock) drawCircle();
       }
     });
   }
@@ -295,6 +310,7 @@ function App() {
         removeEvents();
         changeCursor("select");
         setActive("select");
+        if (lock) drawRectangle();
       }
     });
   }
@@ -388,6 +404,7 @@ function App() {
         removeEvents();
         changeCursor("select");
         setActive("select");
+        if (lock) drawArrow();
       }
     });
   }
@@ -457,9 +474,11 @@ function App() {
         canvas.remove(object);
       });
     }
+    canvas.discardActiveObject().requestRenderAll();
   };
 
   const addTextInput = () => {
+    removeEvents();
     setActive("select");
     changeCursor("select");
     const textInput = new fabric.Textbox("Enter Text", {
@@ -493,7 +512,6 @@ function App() {
     "#17202A",
     "#6200EE",
     "#03dac5",
-    "#9e9e9e",
     "#e91e63",
     "#3f51b5",
     "#9c27b0",
@@ -524,6 +542,7 @@ function App() {
               className="fas fa-pencil-alt fa-2x pencil"
               title="Pencil"
               onClick={() => {
+                removeEvents();
                 canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
                 canvas.freeDrawingBrush.color = previousBrushColor;
                 canvas.freeDrawingBrush.width = previousBrushSize;
@@ -537,6 +556,7 @@ function App() {
               title="Eraser"
               className="fas fa-eraser fa-2x eraser"
               onClick={(e) => {
+                removeEvents();
                 canvas.freeDrawingBrush = new fabric.EraserBrush(canvas);
                 canvas.freeDrawingBrush.width = 2 * previousBrushSize;
                 canvas.isDrawingMode = true;
@@ -575,6 +595,8 @@ function App() {
               title="Select Items"
               className="fas fa-object-ungroup fa-2x select"
               onClick={() => {
+                removeEvents();
+                canvas.selection = true;
                 canvas.isDrawingMode = false;
                 changeCursor("select");
                 setActive("select");
@@ -622,6 +644,20 @@ function App() {
             className="slider"
             onChange={handleBrushSizeChange}
           ></input>
+          <i
+            id="lock-symbol"
+            onClick={() => {
+              lock = !lock;
+              document
+                .getElementById("lock-symbol")
+                .classList.remove(lock ? "fa-lock-open" : "fa-lock");
+              document
+                .getElementById("lock-symbol")
+                .classList.add(lock ? "fa-lock" : "fa-lock-open");
+            }}
+            title="Keep selected tool active after drawing"
+            className="fas fa-lock-open fa-2x"
+          />
           <i
             title="Exit Canvas"
             onClick={() =>
