@@ -5,7 +5,8 @@ import { fabric } from "fabric";
 import "./EraserBrush";
 import { Rnd } from "react-rnd";
 let canvas,
-  activeClass = null;
+  activeClass = null,
+  clipboard;
 let undo = [],
   redo = [];
 let zoom = 1,
@@ -17,10 +18,36 @@ let previousBrushColor = "#5DADE2",
   noPointer = false;
 function App() {
   useEffect(() => {
-    function deleteKey(e) {
-      if (e.keyCode === 46) deleteObjects();
+    function copy() {
+      canvas.getActiveObject().clone(function (cloned) {
+        clipboard = cloned;
+      });
     }
-    document.addEventListener("mousemove", (e) => {
+    function paste() {
+      clipboard.clone(function (clonedObj) {
+        canvas.discardActiveObject();
+        clonedObj.set({
+          left: clonedObj.left + 10,
+          top: clonedObj.top + 10,
+          perPixelTargetFind: true,
+          evented: true,
+        });
+        if (clonedObj.type === "activeSelection") {
+          clonedObj.canvas = canvas;
+          clonedObj.forEachObject(function (obj) {
+            canvas.add(obj);
+          });
+          clonedObj.setCoords();
+        } else {
+          canvas.add(clonedObj);
+        }
+        clipboard.top += 10;
+        clipboard.left += 10;
+        canvas.setActiveObject(clonedObj);
+        canvas.requestRenderAll();
+      });
+    }
+    function onMouseMove() {
       if (noPointer) {
         const toolSection = document.getElementById("toolSection");
         const isOutside = !toolSection.matches(":hover");
@@ -33,7 +60,28 @@ function App() {
           });
         }
       }
-    });
+    }
+    function onKeyDown(e) {
+      if (noPointer) return;
+      if (e.keyCode === 46) deleteObjects();
+      if (
+        canvas.getActiveObject() !== null &&
+        (e.ctrlKey || e.metaKey) &&
+        e.keyCode === 67
+      )
+        copy();
+      if (
+        canvas.getActiveObject() !== null &&
+        (e.ctrlKey || e.metaKey) &&
+        e.keyCode === 88
+      ) {
+        copy();
+        deleteObjects();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.keyCode === 86) paste();
+    }
+    document.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("keydown", onKeyDown);
     canvas = new fabric.Canvas("canvas");
     canvas.loadFromJSON({});
     canvas.isDrawingMode = true;
@@ -46,10 +94,10 @@ function App() {
     setBrushColor(previousBrushColor);
     canvas.on("object:added", onObjectModified);
     canvas.on("object:modified", onObjectModified);
-    window.addEventListener("keydown", deleteKey);
     return () => {
       canvas.dispose();
-      window.removeEventListener("keydown", deleteKey);
+      window.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("mousemove", onMouseMove);
     };
   }, []);
 
@@ -93,6 +141,7 @@ function App() {
         fill: previousBrushColor,
         stroke: previousBrushColor,
         strokeLineCap: "round",
+        perPixelTargetFind: true,
         originX: "center",
         originY: "center",
       });
@@ -142,6 +191,7 @@ function App() {
         fill: "transparent",
         stroke: previousBrushColor,
         strokeWidth: previousBrushSize,
+        perPixelTargetFind: true,
         type: "ellipse",
       });
       canvas.add(ellipse);
@@ -205,6 +255,7 @@ function App() {
         fill: "transparent",
         stroke: previousBrushColor,
         strokeWidth: previousBrushSize,
+        perPixelTargetFind: true,
         strokeLineCap: "round",
         transparentCorners: false,
       });
@@ -282,6 +333,7 @@ function App() {
         strokeWidth: previousBrushSize,
         fill: previousBrushColor,
         stroke: previousBrushColor,
+        perPixelTargetFind: true,
         originX: "center",
         originY: "center",
         type: "arrow",
@@ -303,6 +355,7 @@ function App() {
         width: previousBrushSize * 4,
         height: previousBrushSize * 4,
         fill: previousBrushColor,
+        perPixelTargetFind: true,
       });
       canvas.add(line, triangle);
     });
@@ -587,7 +640,7 @@ function App() {
             <i
               title="Increase Dialog Size"
               onClick={() => {
-                if(zoom > 2) return;
+                if (zoom > 2) return;
                 zoom += 0.1;
                 const styles = document.getElementById("toolSection").style;
                 styles.transform = `scale(${zoom})`;
@@ -608,7 +661,7 @@ function App() {
               title="Decrease Dialog Size"
               className="fas fa-search-minus fa-2x"
               onClick={() => {
-                if(zoom < 0.4) return;
+                if (zoom < 0.4) return;
                 zoom -= 0.1;
                 const styles = document.getElementById("toolSection").style;
                 styles.transform = `scale(${zoom})`;
