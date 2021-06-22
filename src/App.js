@@ -1,14 +1,17 @@
-/* eslint-disable no-undef */
+/* eslint-disable*/
 import React, { useEffect, useRef } from "react";
 import "./App.css";
 import { fabric } from "fabric";
 import "./EraserBrush";
+import BackgroundIcon from "./Icons/background.svg";
+import { saveAs } from "file-saver";
 import { Rnd } from "react-rnd";
 let canvas,
   activeClass = null,
   clipboard,
   lock = false;
-let undo = [],
+let transparent = true;
+const undo = [],
   redo = [];
 let zoom = 1,
   width = 96.5,
@@ -73,6 +76,22 @@ function App() {
     function onKeyDown(e) {
       if (noPointer) return;
       if (e.keyCode === 46) deleteObjects();
+      if (e.shiftKey) {
+        if (activeClass === "pencil") onEraserClick();
+        else onPencilClick();
+      }
+
+      if (e.altKey) {
+        if (activeClass === "pencil" || activeClass === "eraser")
+          onSelectClick();
+        else onPencilClick();
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.keyCode === 83) {
+        e.preventDefault();
+        save();
+      }
+      
       if (
         canvas.getActiveObject() !== null &&
         (e.ctrlKey || e.metaKey) &&
@@ -438,8 +457,9 @@ function App() {
   };
   const onUndo = () => {
     if (!undo.length) return;
-    const prevState = undo.pop();
+
     historyOperations = true;
+    const prevState = undo.pop();
     canvas.clear().renderAll();
     canvas.loadFromJSON(undo[undo.length - 1]);
     canvas.renderAll();
@@ -465,11 +485,7 @@ function App() {
 
   const deleteObjects = () => {
     const activeObjects = canvas.getActiveObjects();
-
-    if (activeObjects.length === 0) {
-      canvas.clear();
-      return;
-    } else if (activeObjects.length) {
+    if (activeObjects.length) {
       activeObjects.forEach((object) => {
         canvas.remove(object);
       });
@@ -498,10 +514,58 @@ function App() {
     canvas.clear();
   };
 
+  const display = (what) => {
+    document.getElementById("draggable-div").style.display = what;
+    return Promise.resolve();
+  }
+
+  const saveFile = (fileName) => {
+    chrome.tabs.captureVisibleTab(null, {quality: 100}, function (image) {
+      saveAs(image, fileName + ".png");
+    });
+    return Promise.resolve();
+  }
+
+  const save = async () => {
+    const fileName = prompt("Saving Canvas... Enter file name ");
+    if (!fileName) return;
+    await display("none");
+    await new Promise(r => setTimeout(r, 100));
+    await saveFile(fileName);
+    await new Promise(r => setTimeout(r, 100));
+    await display("unset");
+  };
+
   const changePointer = () => {
     setActive("mouse");
     changeCursor("mouse");
     noPointer = true;
+  };
+
+  const onSelectClick = () => {
+    canvas.selection = true;
+    canvas.isDrawingMode = false;
+    removeEvents();
+    changeCursor("select");
+    setActive("select");
+  };
+  const onPencilClick = () => {
+    removeEvents();
+    canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+    canvas.freeDrawingBrush.color = previousBrushColor;
+    canvas.freeDrawingBrush.width = previousBrushSize;
+    canvas.isDrawingMode = true;
+    changeCursor("pencil");
+    setActive("pencil");
+  };
+
+  const onEraserClick = () => {
+    removeEvents();
+    canvas.freeDrawingBrush = new fabric.EraserBrush(canvas);
+    canvas.freeDrawingBrush.width = 2 * previousBrushSize;
+    canvas.isDrawingMode = true;
+    changeCursor("eraser");
+    setActive("eraser");
   };
 
   const colors = [
@@ -515,7 +579,6 @@ function App() {
     "#e91e63",
     "#3f51b5",
     "#9c27b0",
-    "#795548",
   ];
 
   return (
@@ -529,7 +592,7 @@ function App() {
         }}
         enableResizing={false}
         id="draggable-div"
-        cancel=".slider, .fa-2x, .colorsets>div"
+        cancel=".slider, .fa-2x, .colorsets>div, img.switch-background"
         style={{ zIndex: 2147483647 }}
       >
         <div
@@ -541,28 +604,13 @@ function App() {
             <i
               className="fas fa-pencil-alt fa-2x pencil"
               title="Pencil"
-              onClick={() => {
-                removeEvents();
-                canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-                canvas.freeDrawingBrush.color = previousBrushColor;
-                canvas.freeDrawingBrush.width = previousBrushSize;
-                canvas.isDrawingMode = true;
-                changeCursor("pencil");
-                setActive("pencil");
-              }}
+              onClick={onPencilClick}
             ></i>
 
             <i
               title="Eraser"
               className="fas fa-eraser fa-2x eraser"
-              onClick={(e) => {
-                removeEvents();
-                canvas.freeDrawingBrush = new fabric.EraserBrush(canvas);
-                canvas.freeDrawingBrush.width = 2 * previousBrushSize;
-                canvas.isDrawingMode = true;
-                changeCursor("eraser");
-                setActive("eraser");
-              }}
+              onClick={onEraserClick}
             />
             <i
               title="Add Text"
@@ -594,13 +642,7 @@ function App() {
             <i
               title="Select Items"
               className="fas fa-object-ungroup fa-2x select"
-              onClick={() => {
-                removeEvents();
-                canvas.selection = true;
-                canvas.isDrawingMode = false;
-                changeCursor("select");
-                setActive("select");
-              }}
+              onClick={onSelectClick}
             />
             <i
               title="Interact with webpage"
@@ -672,6 +714,17 @@ function App() {
             }
             className="fas fa-sign-out-alt fa-2x exit"
           />
+          <img
+            onClick={() => {
+              document.getElementById("root").style.backgroundColor =
+                transparent ? "#313131" : "transparent";
+              transparent = !transparent;
+            }}
+            title="Switch Background"
+            alt="Switch Background"
+            className="switch-background"
+            src={BackgroundIcon}
+          ></img>
           <div className="zoom-buttons">
             <i
               title="Increase Dialog Size"

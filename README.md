@@ -1,3 +1,14 @@
+# Building Instructions
+
+To install dependencies: `yarn` or `yarn install`
+
+To build : `yarn run build`
+
+Build will be in the build folder
+
+If you use nodemon, you can simply run `nodemon` to build and create a zip file
+
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).

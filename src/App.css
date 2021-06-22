@@ -43,8 +43,8 @@ body {
 .toolSection input[type="range"] {
   position: absolute;
   top: 486px;
-  left: 15px;
-  width: 114px;
+  left: 21px;
+  width: 105px;
   transform: rotate(90deg);
 }
 .zoom-buttons {
@@ -69,10 +69,10 @@ body {
 #lock-symbol {
   position: absolute;
   font-size: 19px;
-  line-height: 20px;
+  line-height: 21px;
   cursor: pointer;
   left: 65px;
-  top: 369px;
+  top: 373px;
 }
 
 .toolField i.active {
@@ -94,9 +94,18 @@ body {
 
 i.exit {
   position: absolute;
-  top: 402.5px;
+  top: 407.5px;
   left: 65px;
   font-size: 22px !important;
+  cursor: pointer;
+}
+
+img.switch-background {
+  position: absolute;
+  left: 64px;
+  user-select: none;
+  top: 339px;
+  width: 22px;
   cursor: pointer;
 }
 
