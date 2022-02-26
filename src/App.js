@@ -3,9 +3,11 @@ import React, { useEffect, useRef } from "react";
 import "./App.css";
 import { fabric } from "fabric";
 import "./EraserBrush";
-import BackgroundIcon from "./Icons/background.svg";
+import BackgroundIcon from "./Icons/bucket.png";
+import CopyIcon from "./Icons/copy.png";
 import { saveAs } from "file-saver";
 import { Rnd } from "react-rnd";
+
 let canvas,
   activeClass = null,
   clipboard,
@@ -517,25 +519,33 @@ function App() {
   const display = (what) => {
     document.getElementById("draggable-div").style.display = what;
     return Promise.resolve();
-  }
-
-  const saveFile = (fileName) => {
-    chrome.tabs.captureVisibleTab(null, {quality: 100}, function (image) {
-      saveAs(image, fileName + ".png");
-    });
-    return Promise.resolve();
-  }
+  };
 
   const save = async () => {
     const fileName = prompt("Saving Canvas... Enter file name ");
-    if (!fileName) return;
-    await display("none");
-    await new Promise(r => setTimeout(r, 100));
-    await saveFile(fileName);
-    await new Promise(r => setTimeout(r, 100));
-    await display("unset");
+    const canvasData = canvas.toDataURL();
+    const blob = await dataURItoBlob(canvasData);
+    saveAs(blob, fileName + ".png");
   };
 
+  const dataURItoBlob = async (dataURI) => {
+    const res = await fetch(dataURI);
+    const blob = await res.blob();
+    return blob;
+  };
+
+  const copyCanvasToClipboard = async () => {
+    // canvas is of type Fabric.Canvas
+    const canvasData = canvas.toDataURL();
+    // send the blob to the chrome
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, {
+        type: "copy-to-clipboard",
+        data: canvasData,
+      });
+    });
+  };
+  
   const changePointer = () => {
     setActive("mouse");
     changeCursor("mouse");
@@ -549,6 +559,7 @@ function App() {
     changeCursor("select");
     setActive("select");
   };
+
   const onPencilClick = () => {
     removeEvents();
     canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
@@ -575,7 +586,6 @@ function App() {
     "#239B56",
     "#17202A",
     "#6200EE",
-    "#03dac5",
     "#e91e63",
     "#3f51b5",
     "#9c27b0",
@@ -724,6 +734,13 @@ function App() {
             alt="Switch Background"
             className="switch-background"
             src={BackgroundIcon}
+          ></img>
+          <img
+            onClick={copyCanvasToClipboard}
+            title="Copy Canvas"
+            alt="Copy Canvas"
+            className="copy-canvas fas fa-copy fa-2x"
+            src={CopyIcon}
           ></img>
           <div className="zoom-buttons">
             <i

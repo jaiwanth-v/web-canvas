@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 let boundingX, boundingY, containerWidth, containerHeight;
 
-chrome.runtime.onMessage.addListener((request) => {
+chrome.runtime.onMessage.addListener(async (request) => {
   if (request.type === "toggleExtension") {
     let overlay = document.getElementById("canvas-overlay");
     if (overlay) {
@@ -26,7 +26,7 @@ chrome.runtime.onMessage.addListener((request) => {
     overlay.innerHTML = `<iframe id="canvas-iframe"/>`;
     document.body.appendChild(overlay);
     const iframe = document.getElementById("canvas-iframe");
-    iframe.src = chrome.extension.getURL("index.html");
+    iframe.src = chrome.runtime.getURL("index.html");
     iframe.frameBorder = 0;
     iframe.setAttribute(
       "style",
@@ -43,7 +43,7 @@ chrome.runtime.onMessage.addListener((request) => {
     });
   }
 
-  if (request.type === "disable-pointer-events") {
+  else if (request.type === "disable-pointer-events") {
     const { x, y, width, height } = request.data;
     boundingX = x;
     boundingY = y;
@@ -51,7 +51,15 @@ chrome.runtime.onMessage.addListener((request) => {
     containerHeight = height;
     document.getElementById("canvas-iframe").style.pointerEvents = "none";
   }
-  if (request.type === "enable-pointer-events") {
+  else if (request.type === "enable-pointer-events") {
     document.getElementById("canvas-iframe").style.pointerEvents = "auto";
+  }
+  else if (request.type === "copy-to-clipboard") {
+    const dataURI = request.data;
+    const res = await fetch(dataURI);
+    const blob = await res.blob();
+    navigator.clipboard.write([new ClipboardItem({
+      [blob.type]: blob
+    })]);
   }
 });

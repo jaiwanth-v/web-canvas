@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-chrome.browserAction.onClicked.addListener(() => {
+chrome.action.onClicked.addListener(() => {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     chrome.tabs.sendMessage(tabs[0].id, { type: "toggleExtension" });
   });
@@ -7,7 +7,7 @@ chrome.browserAction.onClicked.addListener(() => {
 
 chrome.runtime.onMessage.addListener((request) => {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.browserAction.setIcon({
+    chrome.action.setIcon({
       tabId: tabs[0].id,
       path:
         request.message === "enableIcon"
